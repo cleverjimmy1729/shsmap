@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上中地图 - 上海中学地图导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4d9c 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .map-header {
+            padding: 15px 20px;
+            background: #2c80e0;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .map-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .map-controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .map-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        
+        .info-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card h3 {
+            color: #2c80e0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .location-list {
+            list-style: none;
+        }
+        
+        .location-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .location-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .marker-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .location-1 { background-color: #e74c3c; }
+        .location-2 { background-color: #3498db; }
+        .location-3 { background-color: #2ecc71; }
+        .location-4 { background-color: #f39c12; }
+        .location-5 { background-color: #9b59b6; }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eaeaea;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .info-panel {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>上中地图导航</h1>
+            <p class="subtitle">上海中学校园地图与重要地点标注</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="map-container">
+            <div class="map-header">
+                <h2>上海中学校园地图</h2>
+                <div class="map-controls">
+                    <button id="zoom-in">放大</button>
+                    <button id="zoom-out">缩小</button>
+                    <button id="reset-view">重置视图</button>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="card">
+                <h3>重要地点</h3>
+                <ul class="location-list">
+                    <li><span class="marker-icon location-1"></span> 教学楼</li>
+                    <li><span class="marker-icon location-2"></span> 图书馆</li>
+                    <li><span class="marker-icon location-3"></span> 体育馆</li>
+                    <li><span class="marker-icon location-4"></span> 食堂</li>
+                    <li><span class="marker-icon location-5"></span> 行政楼</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h3>校园信息</h3>
+                <p><strong>地址：</strong>上海市徐汇区上中路400号</p>
+                <p><strong>占地面积：</strong>约150亩</p>
+                <p><strong>建校时间：</strong>1865年</p>
+                <p><strong>学校类型：</strong>上海市实验性示范性高中</p>
+                <p><strong>联系电话：</strong>021-64100430</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>© 2025 上中地图导航 | 本网站仅用于展示目的</p>
+        </div>
+    </footer>
+
+    <script>
+        // 模拟地图实现 - 使用简单的SVG作为地图背景
+        document.addEventListener('DOMContentLoaded', function() {
+            const map = document.getElementById('map');
+            const zoomInBtn = document.getElementById('zoom-in');
+            const zoomOutBtn = document.getElementById('zoom-out');
+            const resetViewBtn = document.getElementById('reset-view');
+            
+            // 创建SVG地图
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", "0 0 800 600");
+            svg.style.backgroundColor = "#e8f4f8";
+            
+            // 添加校园区域
+            const campus = document.createElementNS(svgNS, "rect");
+            campus.setAttribute("x", "100");
+            campus.setAttribute("y", "50");
+            campus.setAttribute("width", "600");
+            campus.setAttribute("height", "500");
+            campus.setAttribute("fill", "#d4eaf7");
+            campus.setAttribute("stroke", "#2c80e0");
+            campus.setAttribute("stroke-width", "2");
+            svg.appendChild(campus);
+            
+            // 添加道路
+            const road1 = document.createElementNS(svgNS, "rect");
+            road1.setAttribute("x", "100");
+            road1.setAttribute("y", "250");
+            road1.setAttribute("width", "600");
+            road1.setAttribute("height", "20");
+            road1.setAttribute("fill", "#a0a0a0");
+            svg.appendChild(road1);
+            
+            const road2 = document.createElementNS(svgNS, "rect");
+            road2.setAttribute("x", "400");
+            road2.setAttribute("y", "50");
+            road2.setAttribute("width", "20");
+            road2.setAttribute("height", "500");
+            road2.setAttribute("fill", "#a0a0a0");
+            svg.appendChild(road2);
+            
+            // 添加建筑物
+            const buildings = [
+                {x: 150, y: 80, width: 200, height: 120, fill: "#f8d7da", name: "教学楼"},
+                {x: 450, y: 80, width: 200, height: 120, fill: "#d1ecf1", name: "图书馆"},
+                {x: 150, y: 300, width: 200, height: 120, fill: "#d4edda", name: "体育馆"},
+                {x: 450, y: 300, width: 200, height: 120, fill: "#fff3cd", name: "食堂"},
+                {x: 320, y: 200, width: 160, height: 80, fill: "#e2e3e5", name: "行政楼"}
+            ];
+            
+            buildings.forEach((b, index) => {
+                const building = document.createElementNS(svgNS, "rect");
+                building.setAttribute("x", b.x);
+                building.setAttribute("y", b.y);
+                building.setAttribute("width", b.width);
+                building.setAttribute("height", b.height);
+                building.setAttribute("fill", b.fill);
+                building.setAttribute("stroke", "#495057");
+                building.setAttribute("stroke-width", "1");
+                building.setAttribute("data-name", b.name);
+                building.classList.add("building");
+                
+                // 添加悬停效果
+                building.addEventListener('mouseover', function() {
+                    this.style.strokeWidth = "3";
+                    this.style.cursor = "pointer";
+                });
+                
+                building.addEventListener('mouseout', function() {
+                    this.style.strokeWidth = "1";
+                });
+                
+                // 添加点击效果
+                building.addEventListener('click', function() {
+                    alert(`您点击了：${this.getAttribute('data-name')}`);
+                });
+                
+                svg.appendChild(building);
+                
+                // 添加建筑标签
+                const text = document.createElementNS(svgNS, "text");
+                text.setAttribute("x", b.x + b.width/2);
+                text.setAttribute("y", b.y + b.height/2);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dominant-baseline", "middle");
+                text.setAttribute("fill", "#333");
+                text.setAttribute("font-size", "14");
+                text.textContent = b.name;
+                svg.appendChild(text);
+            });
+            
+            // 添加绿地
+            const green1 = document.createElementNS(svgNS, "circle");
+            green1.setAttribute("cx", "250");
+            green1.setAttribute("cy", "450");
+            green1.setAttribute("r", "60");
+            green1.setAttribute("fill", "#c3e6cb");
+            svg.appendChild(green1);
+            
+            const green2 = document.createElementNS(svgNS, "circle");
+            green2.setAttribute("cx", "550");
+            green2.setAttribute("cy", "450");
+            green2.setAttribute("r", "60");
+            green2.setAttribute("fill", "#c3e6cb");
+            svg.appendChild(green2);
+            
+            map.appendChild(svg);
+            
+            // 地图缩放控制
+            let scale = 1;
+            let translateX = 0;
+            let translateY = 0;
+            
+            function updateTransform() {
+                svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                svg.style.transformOrigin = "center center";
+            }
+            
+            zoomInBtn.addEventListener('click', function() {
+                scale *= 1.2;
+                updateTransform();
+            });
+            
+            zoomOutBtn.addEventListener('click', function() {
+                scale /= 1.2;
+                updateTransform();
+            });
+            
+            resetViewBtn.addEventListener('click', function() {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+            });
+            
+            // 添加拖拽功能
+            let isDragging = false;
+            let startX, startY, initialTranslateX, initialTranslateY;
+            
+            map.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialTranslateX = translateX;
+                initialTranslateY = translateY;
+                map.style.cursor = 'grabbing';
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                
+                translateX = initialTranslateX + dx;
+                translateY = initialTranslateY + dy;
+                
+                updateTransform();
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+                map.style.cursor = 'grab';
+            });
+        });
+    </script>
+</body>
+</html>
