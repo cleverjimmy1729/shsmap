@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shsmap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            position: relative;
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        /* 地图容器样式 */
+        .map-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+        
+        
+        /* 可点击区域样式 - 改为小红点 */
+        .clickable-area {
+            position: absolute;
+            width: 16px; /* 圆形直径 */
+            height: 16px; /* 圆形直径 */
+            background-color: #ff0000; /* 红色 */
+            border-radius: 50%; /* 圆形 */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+            z-index: 10;
+            transform: translate(-50%, -50%); /* 使圆心对准坐标点 */
+        }
+        
+        /* 悬停效果 */
+        .clickable-area:hover {
+            background-color: #ff4444;
+            transform: translate(-50%, -50%) scale(1.3); /* 放大 */
+            box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.3);
+        }
+        
+        /* 点击效果 */
+        .clickable-area:active {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        
+        /* 添加动画效果 */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+            }
+        }
+        
+        /* 添加呼吸动画效果 */
+        .clickable-area.pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            position: relative;
+            text-align: center;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            max-height: 400px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .modal-title {
+            font-size: 26px;
+            margin-bottom: 12px;
+            color: #222;
+        }
+        
+        .modal-description {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #666;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
+            background-color: #ff4444;
+            transform: rotate(90deg);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .modal-title {
+                font-size: 22px;
+            }
+        }
+        
+        /* 地点标记提示 */
+        .location-marker {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.1);
+            border-radius: 50%;
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        /* 地点名称标签 */
+        .location-label {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+            display: none;
+            z-index: 20;
+        }
+        
+        .clickable-area:hover + .location-label {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>上海中学地图</h1>
+    <p>made by 2811CPS小组</p>
+    <p>点击地图上的红色标记点查看详情</p>
+    
+    <div class="map-container">
+        <!-- 学校地图 -->
+        <img src="map.png" alt="学校地图" id="school-map">
+        
+        <!-- 可点击区域 - 改为小红点 -->
+        <!-- 注意：现在left和top对应的是圆点的中心位置 -->
+        <div class="clickable-area pulse" 
+             style="left: 1118px; top: 781px;"
+             data-title="龙门楼"
+             data-image="龙门楼1.jpg"
+        </div>
+        
+        <!-- 地点名称标签（悬停时显示） -->
+        <div class="location-label" style="left: 1118px; top: 781px;">龙门楼</div>
+        
+        <!-- 可以添加更多可点击区域 -->
+        <!-- 示例：其他建筑 -->
+        <!--
+        <div class="clickable-area" 
+             style="left: 800px; top: 600px;"
+             data-title="图书馆"
+             data-image="library.png"
+             data-description="学校图书馆">
+        </div>
+        <div class="location-label" style="left: 800px; top: 600px;">图书馆</div>
+        -->
+    </div>
+    
+    <!-- 模态框（弹出框） -->
+    <div id="locationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <img class="modal-image" id="modalImg" src="" alt="地点图片">
+            <h2 class="modal-title" id="modalTitle"></h2>
+            <p class="modal-description" id="modalDescription"></p>
+            <div style="margin-top: 20px; color: #888; font-size: 14px;">
+                点击模态框外部或按ESC键关闭
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取模态框元素
+        const modal = document.getElementById('locationModal');
+        const modalImg = document.getElementById('modalImg');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDescription = document.getElementById('modalDescription');
+        const closeBtn = document.querySelector('.close-btn');
+        const schoolMap = document.getElementById('school-map');
+        
+        // 为所有可点击区域添加点击事件
+        const clickableAreas = document.querySelectorAll('.clickable-area');
+        
+        clickableAreas.forEach(area => {
+            area.addEventListener('click', function() {
+                const title = this.getAttribute('data-title');
+                const imageSrc = this.getAttribute('data-image');
+                const description = this.getAttribute('data-description');
+                
+                // 显示模态框
+                showModal(title, imageSrc, description);
+            });
+        });
+        
+        // 显示模态框的函数
+        function showModal(title, imageSrc, description) {
+            // 设置模态框内容
+            modalTitle.textContent = title;
+            modalDescription.textContent = description;
+            modalImg.src = imageSrc;
+            modalImg.alt = title;
+            
+            // 显示模态框
+            modal.style.display = 'flex';
+            
+            // 图片加载失败处理
+            modalImg.onerror = function() {
+                console.error('图片加载失败:', imageSrc);
+                this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f0f0f0"/><text x="200" y="150" font-family="Arial" font-size="24" text-anchor="middle" fill="%23999">图片加载失败</text></svg>';
+                this.alt = '图片加载失败';
+            };
+            
+            // 图片加载成功
+            modalImg.onload = function() {
+                console.log('图片加载成功:', imageSrc);
+            };
+        }
+        
+        // 关闭模态框
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        // 点击模态框背景也关闭
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // 按ESC键关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // 调试信息
+        console.log('地图上的标记点:');
+        clickableAreas.forEach((area, index) => {
+            console.log(`标记点${index + 1}:`, {
+                title: area.getAttribute('data-title'),
+                position: {
+                    left: area.style.left,
+                    top: area.style.top
+                },
+                image: area.getAttribute('data-image')
+            });
+        });
+        
+        // 动态调整标记点位置（如果地图大小变化）
+        window.addEventListener('resize', function() {
+            // 如果需要响应式调整标记点位置，可以在这里实现
+            // 但需要知道地图的原始尺寸和当前尺寸的比例
+        });
+        
+        // 添加标记点悬停提示的改进
+        clickableAreas.forEach(area => {
+            area.addEventListener('mouseenter', function() {
+                // 可以添加更多悬停效果
+                this.style.zIndex = '15';
+            });
+            
+            area.addEventListener('mouseleave', function() {
+                this.style.zIndex = '10';
+            });
+        });
+    </script>
+</body>
+</html>
